@@ -117,8 +117,35 @@ object AppUtils {
                 }
             )
         }
+        
         return currentAudioFocusChangeListener
     }
+    
+    private class VolumeBooster(enabled: Boolean): AudioListener {
+    var enabled: Boolean = false
+        set(value) {
+            field = value
+            this.booster?.apply {
+                enabled = value
+            }
+        }
+    private var booster: LoudnessEnhancer? = null
+    init {
+        this.enabled = enabled
+    }
+    override fun onAudioSessionId(audioSessionId: Int) {
+        Log.d(LOG_TAG, "Audio session id is ${audioSessionId}, supported gain ${LoudnessEnhancer.PARAM_TARGET_GAIN_MB}")
+        booster?.release()
+        booster = LoudnessEnhancer(audioSessionId)
+        booster?.apply {
+            this@VolumeBooster.enabled
+            setTargetGain(3000)
+        }
+    }
+}
+volumeBooster = VolumeBooster(boostEnabled)
+player.audioComponent?.addAudioListener(volumeBooster)
+
 
     fun Context.isCastApiAvailable(): Boolean {
         val isCastApiAvailable =
